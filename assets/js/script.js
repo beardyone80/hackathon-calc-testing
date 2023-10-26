@@ -3,6 +3,8 @@ class Calculator {
         this.previousOperandTextElement = previousOperandTextElement
         this.currentOperandTextElement = currentOperandTextElement
         this.clear()
+        // Create an array to store the computations for the history table
+        this.history = [];
     }
 
     clear() {
@@ -115,9 +117,15 @@ class Calculator {
             default:
                 return
         }
+
+        this.history.push({
+            calculation: `${this.getDisplayNumber(prev)} ${this.operation} ${this.getDisplayNumber(current)}`,
+        });
+
         this.currentOperand = computation
         this.operation = undefined
         this.previousOperand = ''
+
     }
     /**
      * Adds commas to long numbers to tidy up the display.
@@ -141,32 +149,7 @@ class Calculator {
             return integerDisplay
         }
     }
-// PASTED OLD VERSION UNDERNEATH
-    // updateDisplay() {
-    //     this.currentOperandTextElement.innerText = this.getDisplayNumber(this.currentOperand);
 
-    //     if (this.operation != null) {
-    //         if (this.operation === '%') {
-    //             this.previousOperandTextElement.innerText = `${this.getDisplayNumber(this.previousOperand)} ${this.operation}`;
-    //         }
-    //         else if (this.operation === '√') {
-    //             // don't think this is working
-    //             this.previousOperandTextElement.innerText = `${this.operation} ${this.getDisplayNumber(this.previousOperand)}`;
-    //         }
-    //         else if (this.operation === 'sin') {
-    //             this.currentOperandTextElement.innerText = `${this.operation}(${this.getDisplayNumber(this.currentOperand)})`;
-    //         }
-    //         else if (this.operation === 'tan') {
-    //             this.currentOperandTextElement.innerText = `${this.operation}(${this.getDisplayNumber(this.currentOperand)})`;
-    //         }
-    //         else if (this.operation === 'cos') {
-    //             this.currentOperandTextElement.innerText = `${this.operation}(${this.getDisplayNumber(this.currentOperand)})`;
-    //         }
-    //     }
-    //         else {
-    //         this.previousOperandTextElement.innerText = this.getDisplayNumber(this.previousOperand);
-    //         }
-    // }
 
     updateDisplay() {
         this.currentOperandTextElement.innerText = this.getDisplayNumber(this.currentOperand);
@@ -180,6 +163,38 @@ class Calculator {
         } else {
             this.previousOperandTextElement.innerText = this.getDisplayNumber(this.previousOperand);
         }
+    }
+
+    updateHistory() {
+        const historyTable = document.getElementById('history-table');
+
+        let row = historyTable.insertRow();
+        let historyDelete = row.insertCell(0);
+        let historyData = row.insertCell(1);
+
+        // calls the most recent entry in the history array
+        const latestEntryHistory = this.history[this.history.length - 1];
+
+        let deleteButton = document.createElement('button');
+        deleteButton.className = "delete-button";
+        deleteButton.onclick = "remove(this)";
+        deleteButton.innerHTML = 'X';
+
+        // DELETES THE ROW IN THE HISTORY TABLE //
+        deleteButton.addEventListener('click', function () {
+            const row = this.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        })
+        // created a string from the calculation and the result instead
+        const historyString = `${latestEntryHistory.calculation} = ${this.getDisplayNumber(this.currentOperand)}`;
+
+        historyData.innerText = historyString;
+        historyDelete.appendChild(deleteButton);
+
+        row.appendChild(historyString);
+        row.appendChild(historyDelete);
+
+        historyTable.appendChild(row);
     }
 }
 
@@ -210,73 +225,9 @@ const cosButton = document.querySelector('[data-cos]');
 const tanButton = document.querySelector('[data-tan]');
 
 
-// Number buttons
-// const num1 = document.querySelector('[data-1]');
-// const num2 = document.querySelector('[data-2]');
-// const num3 = document.querySelector('[data-3]');
-// const num4 = document.querySelector('[data-4]');
-// const num5 = document.querySelector('[data-5]');
-// const num6 = document.querySelector('[data-6]');
-// const num7 = document.querySelector('[data-7]');
-// const num8 = document.querySelector('[data-8]');
-// const num9 = document.querySelector('[data-9]');
-// const num0 = document.querySelector('[data-0]');
-
-// num1.value = "1";
-// num2.value = "2";
-// num3.value = "3";
-// num4.value = "4";
-// num5.value = "5";
-// num6.value = "6";
-// num7.value = "7";
-// num8.value = "8";
-// num9.value = "9";
-// num0.value = "0";
-
 
 const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement)
 
-// -------number buttons event listeners---------------- //
-// num1.addEventListener('click', () => {
-//     calculator.appendNumber(num1.value);
-//     calculator.updateDisplay();
-// });
-// num2.addEventListener('click', () => {
-//     calculator.appendNumber(num2.value);
-//     calculator.updateDisplay();
-// });
-// num3.addEventListener('click', () => {
-//     calculator.appendNumber(num3.value);
-//     calculator.updateDisplay();
-// });
-// num4.addEventListener('click', () => {
-//     calculator.appendNumber(num4.value);
-//     calculator.updateDisplay();
-// });
-// num5.addEventListener('click', () => {
-//     calculator.appendNumber(num5.value);
-//     calculator.updateDisplay();
-// });
-// num6.addEventListener('click', () => {
-//     calculator.appendNumber(num6.value);
-//     calculator.updateDisplay();
-// });
-// num7.addEventListener('click', () => {
-//     calculator.appendNumber(num7.value);
-//     calculator.updateDisplay();
-// });
-// num8.addEventListener('click', () => {
-//     calculator.appendNumber(num8.value);
-//     calculator.updateDisplay();
-// });
-// num9.addEventListener('click', () => {
-//     calculator.appendNumber(num9.value);
-//     calculator.updateDisplay();
-// });
-// num0.addEventListener('click', () => {
-//     calculator.appendNumber(num0.value);
-//     calculator.updateDisplay();
-// });
 
 const numberElements = document.querySelectorAll('[data-number]');
 
@@ -303,6 +254,8 @@ operationElements.forEach(element => {
 equalsButton.addEventListener('click', () => {
     calculator.compute();
     calculator.updateDisplay();
+        // STORE CALCULATIONS//
+        calculator.updateHistory();
 })
 
 allClearButton.addEventListener('click', button => {
@@ -375,6 +328,126 @@ cosButton.addEventListener('click', () => {
     calculator.updateDisplay();
 })
 
+//Tips Events//
+
+percentageButton.addEventListener('click', () => {
+
+    let heading = document.getElementById('tipsTitle');
+    let text = document.getElementById('tipsText');
+    let link = `<a href="https://byjus.com/maths/percentage/"
+    aria-label="link to a web page with more info on percentages" target="_blank">Learn more</a>`;
+
+    heading.innerText = "Percentage";
+    text.innerHTML = `In mathematics, a percentage is a number or ratio that can be expressed as a fraction of 100. If we have to calculate percent of a number, divide the number by the whole and multiply by 100. Hence, the percentage means, a part per hundred. The word per cent means per 100. It is represented by the symbol “%”`;
+    text.innerHTML += `<br>${link}`;
+
+})
+
+sqrtButton.addEventListener('click', () => {
+
+    let heading = document.getElementById('tipsTitle');
+    let text = document.getElementById('tipsText');
+    let link = `<a href="https://byjus.com/maths/square-root/"
+    aria-label="link to a web page with more info on square root" target="_blank">Learn more</a>`;
+
+    heading.innerText = "Square Root";
+    text.innerHTML = `Square root of a number is a value, which on multiplication by itself, gives the original number. The square root is an inverse method of squaring a number. Hence, squares and square roots are related concepts.`;
+    text.innerHTML += `<br>${link}`;
+
+})
+
+piButton.addEventListener('click', () => {
+
+    let heading = document.getElementById('tipsTitle');
+    let text = document.getElementById('tipsText');
+    let link = `<a href="https://byjus.com/maths/value-of-pi/"
+    aria-label="link to a web page with more info on Pi" target="_blank">Learn more</a>`;
+
+    heading.innerText = "Pi";
+    text.innerHTML = `The value of Pi (π) is the ratio of the circumference of a circle to its diameter and is approximately equal to 3.14159. In a circle, if you divide the circumference (is the total distance around the circle) by the diameter, you will get exactly the same number. Whether the circle is big or small, the value of pi remains the same.`;
+    text.innerHTML += `<br>${link}`;
+
+})
+
+pow2Button.addEventListener('click', () => {
+
+    let heading = document.getElementById('tipsTitle');
+    let text = document.getElementById('tipsText');
+    let link = `<a href="https://en.wikipedia.org/wiki/Square_(algebra)"
+    aria-label="link to a web page with more info on power of two" target="_blank">Learn more</a>`;
+
+    heading.innerText = "Square";
+    text.innerHTML = `In mathematics, a square is the result of multiplying a number by itself. The verb "to square" is used to denote this operation. Squaring is the same as raising to the power 2, and is denoted by a superscript 2; for instance, the square of 3 may be written as 32, which is the number 9.`;
+    text.innerHTML += `<br>${link}`;
+
+})
+
+pow3Button.addEventListener('click', () => {
+
+    let heading = document.getElementById('tipsTitle');
+    let text = document.getElementById('tipsText');
+    let link = `<a href="https://en.wikipedia.org/wiki/Cube_(algebra)"
+    aria-label="link to a web page with more info on power of three" target="_blank">Learn more</a>`;
+
+    heading.innerText = "Cube";
+    text.innerHTML = `In arithmetic and algebra, the cube of a number n is its third power, that is, the result of multiplying three instances of n together. The cube of a number or any other mathematical expression is denoted by a superscript 3, for example 23 = 8 or (x + 1)3.`;
+    text.innerHTML += `<br>${link}`;
+
+})
+
+toggleButton.addEventListener('click', () => {
+
+    let heading = document.getElementById('tipsTitle');
+    let text = document.getElementById('tipsText');
+    let link = `<a href="https://www.ncl.ac.uk/webtemplate/ask-assets/external/maths-resources/numeracy/positive-and-negative-numbers.html"
+    aria-label="link to a web page with more info on power of three" target="_blank">Learn more</a>`;
+
+    heading.innerText = "Toggle";
+    text.innerHTML = `Positive numbers are those which are greater than zero (>0). Negative numbers are those which are less than zero (<0). Examples of real-world uses of negative numbers include measuring temperatures which are below 0 and bank statements where money which has been withdrawn from an account is shown as negative.`;
+    text.innerHTML += `<br>${link}`;
+
+})
+
+sinButton.addEventListener('click', () => {
+
+    let heading = document.getElementById('tipsTitle');
+    let text = document.getElementById('tipsText');
+    let link = `<a href="https://byjus.com/maths/sin-cos-tan-values/"
+    aria-label="link to a web page with more info on power of three" target="_blank">Learn more</a>`;
+
+    heading.innerText = "Sin Cos Tan";
+    text.innerHTML = `In trigonometry, sin cos and tan values are the primary functions we consider while solving trigonometric problems. These trigonometry values are used to measure the angles and sides of a right-angle triangle. Apart from sine, cosine and tangent values, the other three major values are cotangent, secant and cosecant.`;
+    text.innerHTML += `<br>${link}`;
+
+})
+
+tanButton.addEventListener('click', () => {
+
+    let heading = document.getElementById('tipsTitle');
+    let text = document.getElementById('tipsText');
+    let link = `<a href="https://byjus.com/maths/sin-cos-tan-values/"
+    aria-label="link to a web page with more info on power of three" target="_blank">Learn more</a>`;
+
+    heading.innerText = "Sin Cos Tan";
+    text.innerHTML = `In trigonometry, sin cos and tan values are the primary functions we consider while solving trigonometric problems. These trigonometry values are used to measure the angles and sides of a right-angle triangle. Apart from sine, cosine and tangent values, the other three major values are cotangent, secant and cosecant.`;
+    text.innerHTML += `<br>${link}`;
+
+})
+
+cosButton.addEventListener('click', () => {
+
+    let heading = document.getElementById('tipsTitle');
+    let text = document.getElementById('tipsText');
+    let link = `<a href="https://byjus.com/maths/sin-cos-tan-values/"
+    aria-label="link to a web page with more info on power of three" target="_blank">Learn more</a>`;
+
+    heading.innerText = "Sin Cos Tan";
+    text.innerHTML = `In trigonometry, sin cos and tan values are the primary functions we consider while solving trigonometric problems. These trigonometry values are used to measure the angles and sides of a right-angle triangle. Apart from sine, cosine and tangent values, the other three major values are cotangent, secant and cosecant.`;
+    text.innerHTML += `<br>${link}`;
+
+})
+
+
 // Memory buttons//
 const memoryAddButton = document.querySelector('[data-m-plus]');
 const memoryRecallButton = document.querySelector('[data-m-recall]');
@@ -396,7 +469,7 @@ memoryRecallButton.addEventListener('click', () => {
     }
 });
 
-// function to mute all sounds on the page
+// function to mute all sounds on the page - 'if (!isSoundMute)' only allows sound to be played if isSoundMute is false
 let isSoundMute = false;
 
 function toggleSoundMute() {
@@ -490,7 +563,7 @@ function horrorNumberSound(){
     var snd = new Audio('/assets/audio/horror-numbers.mp3')
     snd.play()//plays the sound for all numbers
 }}
- 
+
 function horrorNumberOperator(){
     if (!isSoundMute){
     var snd = new Audio('/assets/audio/horror-operators.mp3')
@@ -547,15 +620,17 @@ function grungeOperator(){
     snd.play()//plays the sound for all numbers
 }}
 
-function grungeEquals(){
-    if (!isSoundMute){
-    var snd = new Audio('assets/audio/grunge-equals.mp3')
-    snd.play()//plays the sound for all numbers
-}}
+function grungeEquals() {
+    if (!isSoundMute) {
+        var snd = new Audio('assets/audio/grunge-equals.mp3')
+        snd.play()//plays the sound for all numbers
+    }
+}
 
 // premium skin sound effects
-function premiumClick(){
-    if (!isSoundMute){
-    var snd = new Audio('assets/audio/button-press.mp3')
-    snd.play()//plays the sound for all numbers
-}}
+function premiumClick() {
+    if (!isSoundMute) {
+        var snd = new Audio('assets/audio/button-press.mp3')
+        snd.play()//plays the sound for all numbers
+    }
+}
